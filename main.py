@@ -6,7 +6,7 @@ from ultralytics import YOLO
 
 if __name__ == '__main__':
 
-    cap = cv2.VideoCapture("../videos/carro2.MOV")  # mostrar video 
+    cap = cv2.VideoCapture("video_moto.mp4")  # mostrar video 
 
     # cargar modelo 
     model = YOLO("best_placa.pt")  

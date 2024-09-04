@@ -53,7 +53,7 @@ sympy==1.13.2
 thop==0.1.1-2209072238
 tifffile==2024.8.28
 tomlkit==0.13.2
-torch==2.4.0+cu118
+torch==2.4.0
 torchaudio==2.4.0
 torchvision==0.19.0
 tqdm==4.66.5
