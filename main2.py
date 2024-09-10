@@ -69,7 +69,7 @@ ctexto = ''
 
 if __name__ == '__main__':
 
-    cap = cv2.VideoCapture("video_moto3.mp4")  # mostrar video 
+    cap = cv2.VideoCapture("video_carro.mp4")  # mostrar video 
 
     # cargar modelo 
     model = YOLO("best_placa.pt")  
@@ -93,43 +93,29 @@ if __name__ == '__main__':
                 # Recortar la región de la placa del frame original
                 placa_roi = frame[y1:y2, x1:x2]
                 
-                
-                
-                grey= cv2.cvtColor(placa_roi, cv2.COLOR_BGR2GRAY)
-                
-                _, binario = cv2.threshold(grey,90,255,cv2.THRESH_BINARY)
-                
                 alp,anp,cp=placa_roi.shape
-                
-                grey=grey.reshape(alp,anp)
-                
-                
-                
-                print(f'alto: {alp} ancho: {anp}')
-                
-                #procesamos los pixeles para extraer los valores de las placas
                 
                 Mva = np.zeros((alp,anp))
                 
-                #normalizamos las matrices
+                    #normalizamos las matrices
                 
                 nblue= np.matrix(placa_roi[:,:,0])
                 ngreen= np.matrix(placa_roi[:,:,1])
                 nred= np.matrix(placa_roi[:,:,2])
                 
-                #se crea una mascara
+                    #se crea una mascara
                 
                 for col in range(0,alp):
                     for fil in range(0,anp):
                         Max= max(nred[col,fil],ngreen[col,fil],nblue[col,fil])
                         Mva[col,fil] = 255 - Max
                         
-                #binarizamos la imagen
+                    #binarizamos la imagen
                 _, bin = cv2.threshold(Mva,150,255,cv2.THRESH_BINARY)
 
                 
                 
-                #convertimos la matriz en imagen
+                    #convertimos la matriz en imagen
                 bin = bin.reshape(alp,anp)
                 
                 bin = Image.fromarray(bin)
@@ -137,7 +123,10 @@ if __name__ == '__main__':
                 
                 bin = bin.convert("L")
                 
-                cv2.imshow('imagen',binario)
+                print(f'alto: {alp} ancho: {anp}')
+                
+                
+                
                 # Aplicar Tesseract para realizar OCR en la región de la placa
                 config_placa = '--psm 7 --oem 3 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
                 texto = pytesseract.image_to_string(bin, config=config_placa)
@@ -146,10 +135,41 @@ if __name__ == '__main__':
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 ctexto = texto  # Limpiar el texto obtenido
                 
-                if anp==175 and alp==39:
-                    cv2.imwrite('imagen3.jpg',grey)
-                    img=cv2.imread('imagen2.jpg')
-                    texto_fijo = pytesseract.image_to_string(img, config=config_placa)
+                if anp==162 and alp==44:
+                    
+                    cv2.imwrite('imagen4.jpg',placa_roi)
+                    img=cv2.imread('imagen4.jpg')
+    
+                    Mva = np.zeros((alp,anp))
+                
+                    #normalizamos las matrices
+                
+                    nblue= np.matrix(img[:,:,0])
+                    ngreen= np.matrix(img[:,:,1])
+                    nred= np.matrix(img[:,:,2])
+                
+                    #se crea una mascara
+                
+                    for col in range(0,alp):
+                        for fil in range(0,anp):
+                            Max= max(nred[col,fil],ngreen[col,fil],nblue[col,fil])
+                            Mva[col,fil] = 255 - Max
+                        
+                    #binarizamos la imagen
+                    _, bin = cv2.threshold(Mva,150,255,cv2.THRESH_BINARY)
+
+                
+                
+                    #convertimos la matriz en imagen
+                    bin = bin.reshape(alp,anp)
+                
+                    bin = Image.fromarray(bin)
+                
+                
+                    bin = bin.convert("L")
+                    
+                    texto_fijo = pytesseract.image_to_string(bin, config=config_placa)
+                    
                     print(f'la placa para guardar en la base de datos es: {texto_fijo}')
                     
                 if len(texto) >= 7:
