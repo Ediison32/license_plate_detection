@@ -66,10 +66,11 @@ from PIL import Image
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 ctexto = ''
+ctexto2=''
 
 if __name__ == '__main__':
 
-    cap = cv2.VideoCapture("video_carro.mp4")  # mostrar video 
+    cap = cv2.VideoCapture("video_moto.mp4")  # mostrar video 
 
     # cargar modelo 
     model = YOLO("best_placa.pt")  
@@ -90,8 +91,14 @@ if __name__ == '__main__':
                 # Obtener las coordenadas de la caja delimitadora
                 x1, y1, x2, y2 = map(int, box.xyxy[0].numpy())
                 
+                conf=round(float(box.conf[0]),4)
+                
                 # Recortar la región de la placa del frame original
                 placa_roi = frame[y1:y2, x1:x2]
+                
+                cv2.imshow('placa',placa_roi)
+                
+                print(f'la confianza es: {conf}')
                 
                 alp,anp,cp=placa_roi.shape
                 
@@ -135,10 +142,12 @@ if __name__ == '__main__':
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 ctexto = texto  # Limpiar el texto obtenido
                 
-                if anp==162 and alp==44:
+                if conf==0.4893:
+                
+                #anp==162 and alp==44:
                     
-                    cv2.imwrite('imagen4.jpg',placa_roi)
-                    img=cv2.imread('imagen4.jpg')
+                    cv2.imwrite('imagen6.jpg',placa_roi)
+                    img=cv2.imread('imagen6.jpg')
     
                     Mva = np.zeros((alp,anp))
                 
@@ -170,12 +179,16 @@ if __name__ == '__main__':
                     
                     texto_fijo = pytesseract.image_to_string(bin, config=config_placa)
                     
-                    print(f'la placa para guardar en la base de datos es: {texto_fijo}')
+                    ctexto2=texto_fijo
+                    
+                    print(f'la placa para guardar en la base de datos es: {ctexto2[0:7]}')
                     
                 if len(texto) >= 7:
                     
+                    ctexto = texto 
+        
                     ctexto = texto  # Limpiar el texto obtenido
-                    print(f"Texto detectado: {ctexto[0:7]}")
+                    #print(f"Texto detectado: {ctexto[0:7]}")
                 
                 # Mostrar el texto detectado en el frame
                     cv2.putText(frame, ctexto[0:7], (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
