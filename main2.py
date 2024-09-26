@@ -1,203 +1,101 @@
-
-# import matplotlib.pyplot as plt
-# import cv2
-# from ultralytics import YOLO
-# import pytesseract
-
-# import numpy
-
-# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-
-# ctexto=''
-
-# if __name__ == '__main__':
-
-#     cap = cv2.VideoCapture("video_moto3.mp4")  # mostrar video 
-
-#     # cargar modelo 
-#     model = YOLO("best_placa.pt")  
-#     #mode = YOLO(best.pt) este modelo detecta carros y camiones 
-#     """     
-#     model.export(format="onnx")
-#     onnx_model = YOLO("yolov8m.onnx")
-#     results = onnx_model("https://ultralytics.com/images/bus.jpg") 
-#     """
-#     while cap.isOpened():
-#         status, frame = cap.read()
-
-#         if not status:
-#             break
-        
-#         frame = cv2.resize(frame,(900, 800))
-#         results = model(frame)
-        
-        
-
-#         frame2 = results[0].plot()
-        
-        
-        
-        
-#         config_placa = '--psm 7 --oem 3 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-                   
-                    
-#         texto = pytesseract.image_to_string(results,config= config_placa)
-        
-#         ctexto=texto
-        
-#         print(ctexto)
-        
-        
-#         cv2.putText(frame2,ctexto,(300,650),cv2.FONT_HERSHEY_SIMPLEX,1,(0,255,0),2)
-
-
-#         cv2.imshow("frame", frame2)
-#         if cv2.waitKey(1) & 0xFF == ord("q"):
-#             break
-#     cap.release()
-
 import matplotlib.pyplot as plt
 import cv2
 from ultralytics import YOLO
 import pytesseract
 import numpy as np
-from PIL import Image
+from PIL import Image,ImageTk
+import tkinter as tk
+from tkinter import messagebox
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-ctexto = ''
-ctexto2=''
+#pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+cap = None
+video_running = False
+model = YOLO("best_placa.pt")  
 
-if __name__ == '__main__':
+def iniciar():
+    global cap, video_running
+    video_running = True
+    cap = cv2.VideoCapture("video_moto.mp4")
+    visualizar()
 
-    cap = cv2.VideoCapture("video_moto.mp4")  # mostrar video 
 
-    # cargar modelo 
-    model = YOLO("best_placa.pt")  
-    
-    while cap.isOpened():
-        status, frame = cap.read()
+def visualizar():
+    global cap,video_running
+    if video_running and cap is not None:
+            status, frame = cap.read()
 
-        if not status:
-            break
-        
-        frame = cv2.resize(frame, (900, 800))
-        results = model(frame)
-        
-        # Procesar las detecciones
-        for result in results:
-            boxes = result.boxes  # Obtener las cajas delimitadoras
-            for box in boxes:
-                # Obtener las coordenadas de la caja delimitadora
-                x1, y1, x2, y2 = map(int, box.xyxy[0].numpy())
-                
-                conf=round(float(box.conf[0]),4)
-                
-                # Recortar la región de la placa del frame original
-                placa_roi = frame[y1:y2, x1:x2]
-                
-                cv2.imshow('placa',placa_roi)
-                
-                print(f'la confianza es: {conf}')
-                
-                alp,anp,cp=placa_roi.shape
-                
-                Mva = np.zeros((alp,anp))
-                
-                    #normalizamos las matrices
-                
-                nblue= np.matrix(placa_roi[:,:,0])
-                ngreen= np.matrix(placa_roi[:,:,1])
-                nred= np.matrix(placa_roi[:,:,2])
-                
-                    #se crea una mascara
-                
-                for col in range(0,alp):
-                    for fil in range(0,anp):
-                        Max= max(nred[col,fil],ngreen[col,fil],nblue[col,fil])
-                        Mva[col,fil] = 255 - Max
+            if status:
+            
+                frame = cv2.resize(frame, (640, 640))
+                results = model(frame)
+            
+                for result in results:
+                    boxes = result.boxes  # Obtener las cajas delimitadoras
+                    for box in boxes:
+                    # Obtener las coordenadas de la caja delimitadora
+                        x1, y1, x2, y2 = map(int, box.xyxy[0].numpy())
+                    
+                        conf=box.conf[0]
+                        placa_roi = frame[y1:y2, x1:x2]
                         
-                    #binarizamos la imagen
-                _, bin = cv2.threshold(Mva,150,255,cv2.THRESH_BINARY)
-
-                
-                
-                    #convertimos la matriz en imagen
-                bin = bin.reshape(alp,anp)
-                
-                bin = Image.fromarray(bin)
-                
-                
-                bin = bin.convert("L")
-                
-                print(f'alto: {alp} ancho: {anp}')
-                
-                
-                
-                # Aplicar Tesseract para realizar OCR en la región de la placa
-                config_placa = '--psm 7 --oem 3 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-                texto = pytesseract.image_to_string(bin, config=config_placa)
-                
-                # Dibujar la caja delimitadora en el frame
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                ctexto = texto  # Limpiar el texto obtenido
-                
-                if conf==0.4893:
-                
-                #anp==162 and alp==44:
-                    
-                    cv2.imwrite('imagen6.jpg',placa_roi)
-                    img=cv2.imread('imagen6.jpg')
-    
-                    Mva = np.zeros((alp,anp))
-                
-                    #normalizamos las matrices
-                
-                    nblue= np.matrix(img[:,:,0])
-                    ngreen= np.matrix(img[:,:,1])
-                    nred= np.matrix(img[:,:,2])
-                
-                    #se crea una mascara
-                
-                    for col in range(0,alp):
-                        for fil in range(0,anp):
-                            Max= max(nred[col,fil],ngreen[col,fil],nblue[col,fil])
-                            Mva[col,fil] = 255 - Max
                         
-                    #binarizamos la imagen
-                    _, bin = cv2.threshold(Mva,150,255,cv2.THRESH_BINARY)
+                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                        cv2.putText(frame, f'{conf:.2f}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                        
+                            
+                    # Recortar la región de la placa del frame original
+                    
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                img = Image.fromarray(frame)
+                img_tk = ImageTk.PhotoImage(image=img)
+                lbl_video.config(image=img_tk)
+                lbl_video.img_tk = img_tk  # Evita que la imagen sea recolectada por el garbage collector
+                lbl_video.after(10, visualizar)
+                show_plate_image(placa_roi)
+                
+            else:
+                finalizar()
+                
+def show_plate_image(plate_img):
+    # Convertir la imagen de BGR a RGB para mostrar en Tkinter
+    plate_img_rgb = cv2.cvtColor(plate_img, cv2.COLOR_BGR2RGB)
+    img = Image.fromarray(plate_img_rgb)
+    img_tk = ImageTk.PhotoImage(image=img)
 
-                
-                
-                    #convertimos la matriz en imagen
-                    bin = bin.reshape(alp,anp)
-                
-                    bin = Image.fromarray(bin)
-                
-                
-                    bin = bin.convert("L")
-                    
-                    texto_fijo = pytesseract.image_to_string(bin, config=config_placa)
-                    
-                    ctexto2=texto_fijo
-                    
-                    print(f'la placa para guardar en la base de datos es: {ctexto2[0:7]}')
-                    
-                if len(texto) >= 7:
-                    
-                    ctexto = texto 
-        
-                    ctexto = texto  # Limpiar el texto obtenido
-                    #print(f"Texto detectado: {ctexto[0:7]}")
-                
-                # Mostrar el texto detectado en el frame
-                    cv2.putText(frame, ctexto[0:7], (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    # Actualizar el Label con la imagen recortada de la placa
+    lbl_video2.img_tk = img_tk  # Evita que la imagen sea recolectada por el garbage collector
+    lbl_video2.config(image=img_tk)
+   
+    
+def finalizar():
+    global cap,video_running
+    video_running = False
+    if cap is not None:
+        cap.release()
+    lbl_video.image = None
+    messagebox.showinfo("Info", "Video finalizado")
+    
+    
+root = tk.Tk()
+root.title("Reproductor de Video con Detección de Placas")
 
-        # Mostrar el frame con las cajas y el texto detectado
-        cv2.imshow("frame", frame)
-        
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
+# Crear un Label para mostrar el video
+lbl_video = tk.Label(root)
+lbl_video.pack()
 
-    cap.release()
-    cv2.destroyAllWindows()
+lbl_video2=tk.Label(root)
+lbl_video2.pack(pady=10)
+
+# Botones para iniciar y detener el video
+btn_start = tk.Button(root, text="Iniciar Video", command=iniciar)
+btn_start.pack(side=tk.LEFT, padx=10, pady=10)
+
+btn_stop = tk.Button(root, text="Finalizar Video", command=finalizar)
+btn_stop.pack(side=tk.RIGHT, padx=10, pady=10)
+
+# Iniciar el loop principal de la ventana
+root.mainloop()
+    
+    
+    
